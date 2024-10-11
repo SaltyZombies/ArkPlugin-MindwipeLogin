@@ -1,5 +1,5 @@
 #include "API/ARK/Ark.h"
-
+#include <fstream>
 
 /**
  * @brief Callback function called when the server is ready.
@@ -10,6 +10,37 @@
 void OnServerReady()
 {
     Log::GetLog()->info("Plugin loaded successfully and is up!");
+}
+
+// Function to check if the player has already been stored in the file
+bool IsPlayerStored(std::string playerIdentifier)
+{
+    std::ifstream file("ArkApi/Plugins/MindwipeLogin/wipedPlayers.txt");
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line == playerIdentifier)
+        {
+            Log::GetLog()->info("Player already wiped.");
+            file.close();
+            return true;
+        }
+    }
+    Log::GetLog()->info("Player not yet wiped.");
+    file.close();
+    return false;
+}
+
+// Function to store the player in a file
+void StorePlayer(std::string playerIdentifier)
+{
+    std::ofstream file("ArkApi/Plugins/MindwipeLogin/wipedPlayers.txt", std::ios::app);
+    if (file.is_open())
+    {
+        Log::GetLog()->info("Adding player to wipe list..");
+        file << (playerIdentifier) << std::endl;
+        file.close();
+    }
 }
 
 /**
@@ -24,7 +55,18 @@ void OnServerReady()
 DECLARE_HOOK(AShooterPlayerController_OnPossess, void, AShooterPlayerController*, APawn*);
 void Hook_AShooterPlayerController_OnPossess(AShooterPlayerController* _this, APawn* inPawn)
 {
-    return AShooterPlayerController_OnPossess_original(_this, inPawn);
+    Log::GetLog()->info("Mindwipe Hook Triggered");
+
+    AShooterPlayerController_OnPossess_original(_this, inPawn);
+
+    std::string playerEOS = AsaApi::GetApiUtils().GetEOSIDFromController(_this).ToStringUTF8();
+    if (playerEOS.empty())
+		return;
+
+    // Check if the player has already been st qed
+    if (IsPlayerStored(playerEOS))
+        return;
+
     AShooterPlayerState* playerState = static_cast<AShooterPlayerState*>(_this->PlayerStateField().Get());
     if (!playerState)
         return;
@@ -38,6 +80,9 @@ void Hook_AShooterPlayerController_OnPossess(AShooterPlayerController* _this, AP
         return;
 
     playerState->DoRespec(playerData, playerCharacter, false);
+
+    StorePlayer(playerEOS);
+
     Log::GetLog()->info("Mindwipe ran on Possession");
 }
 
@@ -52,8 +97,10 @@ extern "C" __declspec(dllexport) void Plugin_Init()
 {
     Log::Get().Init(PROJECT_NAME);
 
+    Log::GetLog()->info("Creating Hook");
     AsaApi::GetHooks().SetHook("AShooterPlayerController.OnPossess(APawn*)", &Hook_AShooterPlayerController_OnPossess, &AShooterPlayerController_OnPossess_original);
 
+    Log::GetLog()->info("Hook Created, Building for ServerStatus");
     if (AsaApi::GetApiUtils().GetStatus() == AsaApi::ServerStatus::Ready)
         OnServerReady();
 }
