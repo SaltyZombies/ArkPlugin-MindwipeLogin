@@ -15,10 +15,10 @@ To create fully functional plugins, first build the AsaApi library for linking. 
 ## 2: Install Your Plugin
 After building your plugin solution, the output will be in the `out\` directory.
 
-### [MindwipeLogin].dll
+### MindwipeLogin.dll
 Install your plugin on an **ARK: Survival Ascended** server by placing this DLL, into the server's `ShooterGame\Binaries\Win64\ArkApi\Plugins\MindwipeLogin\` directory.
 
-### [MindwipeLogin].dll.arkapi
+### MindwipeLogin.dll.arkapi
 A copy of your plugin DLL for easier testing. If your plugin is already loaded, drop `MindwipeLogin.dll.arkapi` into the `ShooterGame\Binaries\Win64\ArkApi\Plugins\MindwipeLogin\` directory. AsaApi will automatically reload the plugin and rename this file to `MindwipeLogin.dll`.
 
 **Note:** Configure AsaApi's automatic plugin reloading in the server's `config.json` file.
