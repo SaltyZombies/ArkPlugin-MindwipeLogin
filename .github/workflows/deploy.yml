@@ -1,0 +1,50 @@
+name: Build and Deploy
+
+on:
+    release:
+        types: [created]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: windows-latest
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+          with:
+            submodules: true
+
+        - name: Set up vcpkg
+          uses: lukka/get-vcpkg@v10
+          with:
+            vcpkgArguments: '--triplet x64-windows'
+
+        - name: Build AsaApi project
+          run: |
+                mkdir extern/AsaApi/build
+                cd extern/AsaApi/build
+                cmake .. -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+                cmake --build . --config Release
+
+        - name: Build MindwipeLogin project
+          run: |
+                mkdir build
+                cd build
+                cmake .. -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+                cmake --build . --config Release
+
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: MindwipeLogin
+            path: build/Release/MindwipeLogin.dll
+
+        - name: Upload to release
+          if: github.event_name == 'release'
+          uses: actions/upload-release-asset@v1
+          with:
+            upload_url: ${{ github.event.release.upload_url }}
+            asset_path: build/Release/MindwipeLogin.dll
+            asset_name: MindwipeLogin.dll
+            asset_content_type: application/octet-stream
