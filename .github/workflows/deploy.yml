@@ -16,7 +16,7 @@ jobs:
             submodules: true
 
         - name: Set up vcpkg
-          uses: lukka/get-vcpkg@v10
+          uses: lukka/get-vcpkg@main
           with:
             vcpkgArguments: '--triplet x64-windows'
 
